@@ -36,7 +36,7 @@ A simple service that politely greets whoever calls its `SayHello` method:
 
 ```rust,no_run
 use std::{error::Error, future::pending};
-use zbus::{ConnectionBuilder, dbus_interface};
+use zbus::{connection, dbus_interface};
 
 struct Greeter {
     count: u64
@@ -55,7 +55,7 @@ impl Greeter {
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let greeter = Greeter { count: 0 };
-    let _conn = ConnectionBuilder::session()?
+    let _conn = connection::ConnectionBuilder::session()?
         .name("org.zbus.MyGreeter")?
         .serve_at("/org/zbus/MyGreeter", greeter)?
         .build()
