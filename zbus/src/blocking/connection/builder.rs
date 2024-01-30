@@ -10,12 +10,14 @@ use tokio::net::UnixStream;
 #[cfg(all(windows, not(feature = "tokio")))]
 use uds_windows::UnixStream;
 
+use zbus_address::ToDBusAddrs;
+
 use zvariant::{ObjectPath, Str};
 
 #[cfg(feature = "p2p")]
 use crate::Guid;
 use crate::{
-    address::Address, blocking::Connection, connection::socket::BoxedSplit, names::WellKnownName,
+    blocking::Connection, connection::socket::BoxedSplit, names::WellKnownName,
     object_server::Interface, utils::block_on, AuthMechanism, Error, Result,
 };
 
@@ -40,10 +42,9 @@ impl<'a> Builder<'a> {
     /// Create a builder for a connection that will use the given [D-Bus bus address].
     ///
     /// [D-Bus bus address]: https://dbus.freedesktop.org/doc/dbus-specification.html#addresses
-    pub fn address<A>(address: A) -> Result<Self>
+    pub fn address<'t, A>(address: &'t A) -> Result<Self>
     where
-        A: TryInto<Address>,
-        A::Error: Into<Error>,
+        A: ToDBusAddrs<'t> + ?Sized,
     {
         crate::connection::Builder::address(address).map(Self)
     }
