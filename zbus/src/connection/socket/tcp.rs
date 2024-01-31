@@ -238,6 +238,42 @@ pub(crate) async fn connect(addr: &zbus_address::transport::Tcp<'_>) -> Result<S
     connect_with(host, port, addr.family()).await
 }
 
+pub(crate) async fn connect_nonce(addr: &zbus_address::transport::NonceTcp<'_>) -> Result<Stream> {
+    let Some(host) = addr.host() else {
+        return Err(Error::Address("No host in address".into()));
+    };
+    let Some(port) = addr.port() else {
+        return Err(Error::Address("No port in address".into()));
+    };
+    let Some(noncefile) = addr.noncefile() else {
+        return Err(Error::Address("No noncefile in address".into()));
+    };
+
+    #[allow(unused_mut)]
+    let mut stream = connect_with(host, port, addr.family()).await?;
+
+    #[cfg(not(feature = "tokio"))]
+    {
+        use std::io::prelude::*;
+
+        let nonce = std::fs::read(noncefile)?;
+        let mut nonce = &nonce[..];
+
+        while !nonce.is_empty() {
+            let len = stream.write_with(|mut s| s.write(nonce)).await?;
+            nonce = &nonce[len..];
+        }
+    }
+
+    #[cfg(feature = "tokio")]
+    {
+        let nonce = tokio::fs::read(noncefile).await?;
+        tokio::io::AsyncWriteExt::write_all(&mut stream, &nonce).await?;
+    }
+
+    Ok(stream)
+}
+
 #[cfg(test)]
 mod tests {
     use zbus_address::{transport::Transport, DBusAddr};
