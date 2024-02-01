@@ -4,6 +4,8 @@ use zbus_address::{transport::Transport, DBusAddr};
 
 use super::socket::{self, BoxedSplit};
 
+mod macos;
+
 async fn connect(addr: &DBusAddr<'_>) -> Result<(BoxedSplit, Option<OwnedGuid>)> {
     let guid = match addr.guid() {
         Some(g) => Some(Guid::try_from(g.as_ref())?.into()),
@@ -19,6 +21,8 @@ async fn connect(addr: &DBusAddr<'_>) -> Result<(BoxedSplit, Option<OwnedGuid>)>
             feature = "tokio-vsock"
         ))]
         Transport::Vsock(v) => socket::vsock::connect(&v).await?.into(),
+        #[cfg(target_os = "macos")]
+        Transport::Launchd(l) => macos::connect(&l).await?.into(),
         _ => {
             // safety: unwrap() for code transition => addr is valid already
             let legacy: crate::Address = addr.to_string().parse().unwrap();
