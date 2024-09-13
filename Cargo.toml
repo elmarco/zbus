@@ -5,6 +5,7 @@ members = [
     "zbus_names",
     "zvariant_derive",
     "zvariant_utils",
+    "zbus_address",
     "zbus_macros",
     "zbus_xml",
     "zbus_xmlgen",

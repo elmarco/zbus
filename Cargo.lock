@@ -2341,6 +2341,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "zbus_address"
+version = "0.1.0"
+dependencies = [
+ "nix 0.29.0",
+]
+
+[[package]]
 name = "zbus_macros"
 version = "4.4.0"
 dependencies = [
