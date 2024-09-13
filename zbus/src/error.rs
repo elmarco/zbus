@@ -1,5 +1,6 @@
 use static_assertions::assert_impl_all;
 use std::{convert::Infallible, error, fmt, io, sync::Arc};
+use zbus_address::Error as AddressError;
 use zbus_names::{Error as NamesError, InterfaceName, OwnedErrorName};
 use zvariant::{Error as VariantError, ObjectPath};
 
@@ -61,6 +62,8 @@ pub enum Error {
     InvalidSerial,
     /// The given interface already exists at the given path.
     InterfaceExists(InterfaceName<'static>, ObjectPath<'static>),
+    /// Invalid D-Bus server address.
+    DBusAddress(AddressError),
 }
 
 assert_impl_all!(Error: Send, Sync, Unpin);
@@ -88,6 +91,7 @@ impl PartialEq for Error {
             (Error::InputOutput(_), Self::InputOutput(_)) => false,
             (Self::Failure(s1), Self::Failure(s2)) => s1 == s2,
             (Self::InterfaceExists(s1, s2), Self::InterfaceExists(o1, o2)) => s1 == o1 && s2 == o2,
+            (Self::DBusAddress(s), Self::DBusAddress(o)) => s == o,
             (_, _) => false,
         }
     }
@@ -117,6 +121,7 @@ impl error::Error for Error {
             Error::MissingParameter(_) => None,
             Error::InvalidSerial => None,
             Error::InterfaceExists(_, _) => None,
+            Error::DBusAddress(e) => Some(e),
         }
     }
 }
@@ -152,6 +157,7 @@ impl fmt::Display for Error {
             }
             Error::InvalidSerial => write!(f, "Serial number in the message header is 0"),
             Error::InterfaceExists(i, p) => write!(f, "Interface `{i}` already exists at `{p}`"),
+            Error::DBusAddress(e) => write!(f, "{e}"),
         }
     }
 }
@@ -182,6 +188,7 @@ impl Clone for Error {
             Error::MissingParameter(p) => Error::MissingParameter(p),
             Error::InvalidSerial => Error::InvalidSerial,
             Error::InterfaceExists(i, p) => Error::InterfaceExists(i.clone(), p.clone()),
+            Error::DBusAddress(e) => Error::DBusAddress(e.clone()),
         }
     }
 }
@@ -196,6 +203,12 @@ impl From<io::Error> for Error {
 impl From<nix::Error> for Error {
     fn from(val: nix::Error) -> Self {
         io::Error::from_raw_os_error(val as i32).into()
+    }
+}
+
+impl From<AddressError> for Error {
+    fn from(val: AddressError) -> Self {
+        Error::DBusAddress(val)
     }
 }
 
