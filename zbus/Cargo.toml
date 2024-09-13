@@ -35,10 +35,11 @@ async-io = [
   "futures-util/io",
 ]
 tokio = ["dep:tokio"]
-vsock = ["dep:vsock", "dep:async-io"]
-tokio-vsock = ["dep:tokio-vsock", "tokio"]
+vsock = ["dep:vsock", "dep:async-io", "zbus_address/vsock"]
+tokio-vsock = ["dep:tokio-vsock", "tokio", "zbus_address/vsock"]
 
 [dependencies]
+zbus_address = { path = "../zbus_address" }
 zbus_macros = { path = "../zbus_macros", version = "=4.4.0" }
 zvariant = { path = "../zvariant", version = "4.2.0", default-features = false, features = [
   "enumflags2",
